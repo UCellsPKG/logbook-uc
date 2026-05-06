@@ -1,0 +1,16 @@
+{
+  "name": "logbook-uc-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create logbook-uc-db",
+    "db:migrate": "wrangler d1 execute logbook-uc-db --remote --file=schema.sql",
+    "db:migrate-local": "wrangler d1 execute logbook-uc-db --local --file=schema.sql",
+    "secret:teams": "wrangler secret put TEAMS_WEBHOOK_URL"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

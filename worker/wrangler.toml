@@ -1,0 +1,8 @@
+name = "logbook-uc"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "logbook-uc-db"
+database_id = "PASTE_AFTER_RUNNING_npm_run_db_create"

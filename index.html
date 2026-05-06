@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#003DA5" />
+  <title>UC PKG 파라변경이력 부동내역 양식</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="lang-bi">
+  <div class="security-banner" role="alert">
+    ⚠️ Prototype — Internal Use Only. Do not enter proprietary or sensitive
+    process parameter values. This site is publicly hosted on GitHub Pages
+    and not yet on Ultium internal infrastructure. Use sanitized/example
+    data only until production deployment is approved.
+  </div>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <!--
+          To use the official Ultium Cells logo, drop a `logo.png` (or .svg)
+          file into the project root and replace this entire .header-logo
+          block with:
+            <img src="logo.png" alt="Ultium Cells" />
+          Recommended: ~200px wide, transparent background, white/light
+          variant so it reads on the blue header.
+        -->
+        <span class="logo-wordmark" aria-label="Ultium Cells">
+          <span class="wordmark-top">ULTIUM</span>
+          <span class="wordmark-bottom">CELLS</span>
+        </span>
+      </div>
+      <div class="header-text">
+        <h1 id="app-title">
+          <span class="ko">UC PKG 파라변경이력 부동내역 양식</span>
+          <span class="en lang-en-only">UC PKG Parameter Change &amp; Downtime Log</span>
+        </h1>
+        <p id="app-subtitle">
+          <span class="en">Ultium Cells PKG — Parameter Change &amp; Downtime Log</span>
+          <span class="ko lang-ko-only">Ultium Cells PKG — 파라미터 변경 및 부동 기록</span>
+        </p>
+        <p class="site-label">
+          <span class="ko">현장</span><span class="sep"> / </span><span class="en">Site</span>:
+          <span id="site-label">UC1-Lordstown</span>
+        </p>
+      </div>
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button
+          type="button"
+          class="lang-btn"
+          data-lang="ko"
+          aria-label="한국어 only"
+          title="한국어"
+        >🇰🇷</button>
+        <button
+          type="button"
+          class="lang-btn"
+          data-lang="en"
+          aria-label="English only"
+          title="English"
+        >🇺🇸</button>
+        <button
+          type="button"
+          class="lang-btn active"
+          data-lang="bi"
+          aria-label="Bilingual"
+          title="한국어 + English"
+        >한·EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="tab-switcher" role="tablist">
+      <button
+        type="button"
+        class="tab-button active"
+        role="tab"
+        aria-selected="true"
+        aria-controls="tab-para"
+        data-tab="para"
+      >
+        <span class="ko">Para/IP 변경공유</span>
+        <span class="en lang-en-only">Parameter Change</span>
+      </button>
+      <button
+        type="button"
+        class="tab-button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="tab-downtime"
+        data-tab="downtime"
+      >
+        <span class="ko">부동내역 공유</span>
+        <span class="en lang-en-only">Downtime Log</span>
+      </button>
+    </div>
+
+    <!-- ===== Tab 1: Parameter Change ===== -->
+    <section id="tab-para" class="tab-panel active" role="tabpanel">
+      <form id="form-para" class="entry-form" novalidate>
+        <div class="field">
+          <label for="para-line">
+            1. <span class="ko">호기</span><span class="sep"> / </span><span class="en">Line #</span>
+          </label>
+          <select id="para-line" name="line" required></select>
+          <p class="error-text" data-error-for="line"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-machine">
+            2-1. Machine
+          </label>
+          <select id="para-machine" name="machine" required></select>
+          <p class="error-text" data-error-for="machine"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-unit">
+            2-2. Unit
+          </label>
+          <select id="para-unit" name="unit" required></select>
+          <p class="error-text" data-error-for="unit"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-assy">
+            2-3. <span class="ko">Assy'</span><span class="sep"> / </span><span class="en">Assembly</span>
+          </label>
+          <select id="para-assy" name="assy" required></select>
+          <p class="error-text" data-error-for="assy"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-change-time">
+            3. <span class="ko">변경시간</span><span class="sep"> / </span><span class="en">Change Time</span>
+          </label>
+          <input
+            type="datetime-local"
+            id="para-change-time"
+            name="change_time"
+            required
+          />
+          <p class="error-text" data-error-for="change_time"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-changed-by">
+            4. <span class="ko">변경자</span><span class="sep"> / </span><span class="en">Changed By</span>
+          </label>
+          <input type="text" id="para-changed-by" name="changed_by" required />
+          <p class="error-text" data-error-for="changed_by"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-param">
+            5. <span class="ko">변경 Para</span><span class="sep"> / </span><span class="en">Parameter Name</span>
+          </label>
+          <input type="text" id="para-param" name="param" required />
+          <p class="error-text" data-error-for="param"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-prev">
+            6. <span class="ko">이전값</span><span class="sep"> / </span><span class="en">Previous Value</span>
+          </label>
+          <input type="text" id="para-prev" name="previous_value" required />
+          <p class="error-text" data-error-for="previous_value"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-new">
+            7. <span class="ko">변경값</span><span class="sep"> / </span><span class="en">New Value</span>
+          </label>
+          <input type="text" id="para-new" name="new_value" required />
+          <p class="error-text" data-error-for="new_value"></p>
+        </div>
+
+        <div class="field">
+          <label for="para-reason">
+            8. <span class="ko">변경사유</span><span class="sep"> / </span><span class="en">Reason for Change</span>
+          </label>
+          <textarea
+            id="para-reason"
+            name="reason"
+            rows="4"
+            required
+          ></textarea>
+          <p class="error-text" data-error-for="reason"></p>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <span class="ko">양식 생성하기</span><span class="sep"> / </span><span class="en">Generate</span>
+          </button>
+          <button type="button" class="btn btn-secondary" data-action="new-entry">
+            <span class="ko">새 입력</span><span class="sep"> / </span><span class="en">New Entry</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ===== Tab 2: Downtime ===== -->
+    <section id="tab-downtime" class="tab-panel" role="tabpanel" hidden>
+      <form id="form-downtime" class="entry-form" novalidate>
+        <div class="field">
+          <label for="dt-type">
+            <span class="ko">종류</span><span class="sep"> / </span><span class="en">Type</span>
+          </label>
+          <select id="dt-type" name="type" required></select>
+          <p class="error-text" data-error-for="type"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-line">
+            1. <span class="ko">호기</span><span class="sep"> / </span><span class="en">Line #</span>
+          </label>
+          <select id="dt-line" name="line" required></select>
+          <p class="error-text" data-error-for="line"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-machine">
+            2-1. Machine
+          </label>
+          <select id="dt-machine" name="machine" required></select>
+          <p class="error-text" data-error-for="machine"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-unit">
+            2-2. Unit
+          </label>
+          <select id="dt-unit" name="unit" required></select>
+          <p class="error-text" data-error-for="unit"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-assy">
+            2-3. <span class="ko">Assy'</span><span class="sep"> / </span><span class="en">Assembly</span>
+          </label>
+          <select id="dt-assy" name="assy" required></select>
+          <p class="error-text" data-error-for="assy"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-occurrence">
+            3-1. <span class="ko">발생시간</span><span class="sep"> / </span><span class="en">Occurrence Time</span>
+          </label>
+          <input
+            type="datetime-local"
+            id="dt-occurrence"
+            name="occurrence_time"
+            required
+          />
+          <p class="error-text" data-error-for="occurrence_time"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-recovery">
+            3-2. <span class="ko">조치완료</span><span class="sep"> / </span><span class="en">Recovery Time</span>
+          </label>
+          <input
+            type="datetime-local"
+            id="dt-recovery"
+            name="recovery_time"
+            required
+          />
+          <p class="duration-text" id="dt-duration"></p>
+          <p class="error-text" data-error-for="recovery_time"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-tech">
+            4. <span class="ko">작업자</span><span class="sep"> / </span><span class="en">Technician</span>
+          </label>
+          <input type="text" id="dt-tech" name="technician" required />
+          <p class="error-text" data-error-for="technician"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-symptom">
+            5. <span class="ko">현상</span><span class="sep"> / </span><span class="en">Symptom</span>
+          </label>
+          <textarea id="dt-symptom" name="symptom" rows="4" required></textarea>
+          <p class="error-text" data-error-for="symptom"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-cause">
+            6. <span class="ko">원인</span><span class="sep"> / </span><span class="en">Root Cause</span>
+          </label>
+          <textarea id="dt-cause" name="cause" rows="4" required></textarea>
+          <p class="error-text" data-error-for="cause"></p>
+        </div>
+
+        <div class="field">
+          <label for="dt-counter">
+            7. <span class="ko">조치</span><span class="sep"> / </span><span class="en">Countermeasure</span>
+          </label>
+          <textarea
+            id="dt-counter"
+            name="countermeasure"
+            rows="4"
+            required
+          ></textarea>
+          <p class="error-text" data-error-for="countermeasure"></p>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <span class="ko">양식 생성하기</span><span class="sep"> / </span><span class="en">Generate</span>
+          </button>
+          <button type="button" class="btn btn-secondary" data-action="new-entry">
+            <span class="ko">새 입력</span><span class="sep"> / </span><span class="en">New Entry</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ===== Result panel ===== -->
+    <section id="result-panel" class="result-panel" hidden>
+      <div id="status-banner" class="status-banner"></div>
+
+      <div class="kakao-output">
+        <div class="kakao-output-header">
+          <h2>KakaoTalk Message</h2>
+          <button
+            type="button"
+            class="btn btn-copy"
+            id="copy-button"
+          >
+            📋 <span class="ko">복사</span><span class="sep"> / </span><span class="en">Copy to Clipboard</span>
+          </button>
+        </div>
+        <pre id="kakao-text" class="kakao-text"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
