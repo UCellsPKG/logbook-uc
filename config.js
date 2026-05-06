@@ -5,7 +5,7 @@
 const CONFIG = {
   // Set after deploying the Cloudflare Worker
   // (cd worker && npm run deploy → copy the URL from output)
-  apiUrl: "",
+  apiUrl: "https://logbook-uc.ucellspkg.workers.dev",
 
   appTitle: "UC PKG 파라변경이력 부동내역 양식",
   appSubtitle: "Ultium Cells PKG — Parameter Change & Downtime Log",
