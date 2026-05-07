@@ -332,6 +332,9 @@ body {
   min-height: 44px;
   padding: 10px 14px;
   font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-copy:hover {
@@ -494,6 +497,20 @@ body.lang-en .lang-en-only {
 /* When .en or .ko is also marked .lang-X-only, the parent rules above
    already handle visibility — keep this block minimal. */
 
+/* ===== Inline SVG icons ===== */
+.icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.icon-lg {
+  width: 22px;
+  height: 22px;
+}
+
 /* ===== Data export footer ===== */
 .data-export {
   background: var(--form-bg);
@@ -511,6 +528,9 @@ body.lang-en .lang-en-only {
   font-size: 16px;
   font-weight: 700;
   color: var(--label-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .export-hint {

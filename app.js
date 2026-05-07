@@ -41,24 +41,24 @@
       bi: "Recovery time must be at or after occurrence time.",
     },
     statusSubmitting: {
-      ko: "⏳ 제출 중…",
-      en: "⏳ Submitting…",
-      bi: "⏳ Submitting…",
+      ko: "제출 중…",
+      en: "Submitting…",
+      bi: "Submitting…",
     },
     statusSuccess: {
-      ko: "✅ 데이터베이스에 저장되었습니다",
-      en: "✅ Saved to database",
-      bi: "✅ Saved to database",
+      ko: "데이터베이스에 저장되었습니다",
+      en: "Saved to database",
+      bi: "Saved to database",
     },
     statusFailPrefix: {
-      ko: "⚠️ 저장 실패 — 수동으로 복사하여 Adam에게 알리세요",
-      en: "⚠️ Save failed — copy text manually and notify Adam",
-      bi: "⚠️ Save failed — copy text manually and notify Adam",
+      ko: "저장 실패 — 수동으로 복사하여 Adam에게 알리세요",
+      en: "Save failed — copy text manually and notify Adam",
+      bi: "Save failed — copy text manually and notify Adam",
     },
     statusInfoNoBackend: {
-      ko: "ℹ️ 백엔드 미설정 — 아래 텍스트를 복사해 수동으로 공유하세요.",
-      en: "ℹ️ Backend not configured — copy text below to share manually.",
-      bi: "ℹ️ Backend not configured — copy text below to share manually.",
+      ko: "백엔드 미설정 — 아래 텍스트를 복사해 수동으로 공유하세요.",
+      en: "Backend not configured — copy text below to share manually.",
+      bi: "Backend not configured — copy text below to share manually.",
     },
   };
 
@@ -343,10 +343,16 @@
       .scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Original copy-button HTML (icon + bilingual labels) so we can restore it
+  // after a transient "Copied" / "Copy failed" state.
+  let copyButtonOriginalHtml = null;
+
   function resetCopyButton() {
     const btn = document.getElementById("copy-button");
     btn.classList.remove("copied");
-    btn.textContent = "📋 Copy to Clipboard";
+    if (copyButtonOriginalHtml != null) {
+      btn.innerHTML = copyButtonOriginalHtml;
+    }
   }
 
   // ----- Backend POST -----
@@ -456,7 +462,7 @@
         document.body.removeChild(ta);
       }
       btn.classList.add("copied");
-      btn.textContent = "✓ Copied";
+      btn.textContent = "Copied";
       setTimeout(resetCopyButton, 1800);
     } catch (err) {
       btn.textContent = "Copy failed — select & copy manually";
@@ -588,7 +594,9 @@
       btn.addEventListener("click", resetActiveTab);
     });
 
-    document.getElementById("copy-button").addEventListener("click", copyKakaoText);
+    const copyBtn = document.getElementById("copy-button");
+    copyButtonOriginalHtml = copyBtn.innerHTML;
+    copyBtn.addEventListener("click", copyKakaoText);
   }
 
   if (document.readyState === "loading") {

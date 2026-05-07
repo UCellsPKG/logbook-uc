@@ -12,7 +12,7 @@
  *   env.TEAMS_WEBHOOK_URL   optional, set via `wrangler secret put TEAMS_WEBHOOK_URL`
  */
 
-import * as XLSX from 'xlsx-js-style';
+import ExcelJS from 'exceljs';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -193,36 +193,48 @@ async function handleExport(url, env) {
     `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} ORDER BY server_timestamp DESC`
   ).all();
 
-  // Header row + data rows.
-  const aoa = [cfg.headers];
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Logbook UC';
+  wb.created = new Date();
+
+  // Freeze the top row so the header stays put while scrolling.
+  const ws = wb.addWorksheet(cfg.sheetName, {
+    views: [{ state: 'frozen', ySplit: 1 }],
+  });
+
+  // Define columns (header text + key + width).
+  ws.columns = cfg.dbColumns.map((dbCol, i) => ({
+    header: cfg.headers[i],
+    key: dbCol,
+    width: cfg.widths[i],
+  }));
+
+  // Add data rows keyed by db column.
   for (const row of (result.results || [])) {
-    aoa.push(cfg.dbColumns.map(c => row[c] == null ? '' : row[c]));
-  }
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = cfg.widths.map(wch => ({ wch }));
-
-  // Style the header row: bold white text on Ultium-blue, slightly taller row.
-  const headerStyle = {
-    font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } },
-    fill: { patternType: 'solid', fgColor: { rgb: '003DA5' } },
-    alignment: { horizontal: 'left', vertical: 'center' },
-    border: {
-      bottom: { style: 'thin', color: { rgb: '002A73' } },
-    },
-  };
-  for (let c = 0; c < cfg.headers.length; c++) {
-    const cellRef = XLSX.utils.encode_cell({ r: 0, c });
-    if (ws[cellRef]) {
-      ws[cellRef].s = headerStyle;
+    const rowObj = {};
+    for (const col of cfg.dbColumns) {
+      rowObj[col] = row[col] == null ? '' : row[col];
     }
+    ws.addRow(rowObj);
   }
-  ws['!rows'] = [{ hpt: 22 }];
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, cfg.sheetName);
+  // Style the header row: bold white on Ultium-blue, with a darker bottom border.
+  const headerRow = ws.getRow(1);
+  headerRow.height = 22;
+  headerRow.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.alignment = { horizontal: 'left', vertical: 'middle' };
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF003DA5' },
+    };
+    cell.border = {
+      bottom: { style: 'thin', color: { argb: 'FF002A73' } },
+    };
+  });
 
-  const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  const buffer = await wb.xlsx.writeBuffer();
 
   const filename = `logbook-uc-${type}-${new Date().toISOString().slice(0, 10)}.xlsx`;
 
