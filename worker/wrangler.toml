@@ -5,4 +5,4 @@ compatibility_date = "2025-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "logbook-uc-db"
-database_id = "PASTE_AFTER_RUNNING_npm_run_db_create"
+database_id = "480ba7b6-360b-44e5-9e27-0f02491e66de"

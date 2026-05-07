@@ -46,9 +46,9 @@
       bi: "⏳ Submitting…",
     },
     statusSuccess: {
-      ko: "✅ Sheet에 저장되고 Teams에 전송되었습니다",
-      en: "✅ Saved to Sheet & posted to Teams",
-      bi: "✅ Saved to Sheet & posted to Teams",
+      ko: "✅ 데이터베이스에 저장되었습니다",
+      en: "✅ Saved to database",
+      bi: "✅ Saved to database",
     },
     statusFailPrefix: {
       ko: "⚠️ 저장 실패 — 수동으로 복사하여 Adam에게 알리세요",
@@ -416,8 +416,9 @@
     showStatus("info", t("statusSubmitting"));
 
     try {
-      await postToBackend(payload);
-      showStatus("success", t("statusSuccess"));
+      const result = await postToBackend(payload);
+      const idSuffix = result && result.id ? ` (entry #${result.id})` : "";
+      showStatus("success", t("statusSuccess") + idSuffix);
     } catch (err) {
       showStatus("error", `${t("statusFailPrefix")} (${err.message})`);
     }

@@ -4,13 +4,15 @@
  * Routes:
  *   GET  /                              health check
  *   POST /                              submit form (JSON body, formType field routes to table)
- *   GET  /export?type=para_changes      CSV download
- *   GET  /export?type=downtimes         CSV download
+ *   GET  /export?type=para_changes      XLSX download (opens directly in Excel)
+ *   GET  /export?type=downtimes         XLSX download (opens directly in Excel)
  *
  * Bindings (configured in wrangler.toml):
  *   env.DB                  D1 database
  *   env.TEAMS_WEBHOOK_URL   optional, set via `wrangler secret put TEAMS_WEBHOOK_URL`
  */
+
+import * as XLSX from 'xlsx-js-style';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -163,47 +165,74 @@ async function postToTeams(webhookUrl, formType, body) {
   });
 }
 
+// Column metadata for the XLSX export — DB column names mapped to friendly
+// header labels and sensible Excel column widths (in characters).
+const EXPORT_COLUMNS = {
+  para_changes: {
+    sheetName: 'Parameter Changes',
+    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'machine', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason'],
+    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Machine', 'Unit', 'Component', 'Change Time', 'Changed By', 'Parameter', 'Previous Value', 'New Value', 'Reason'],
+    widths:    [ 6,    22,                   22,                   14,     8,      30,        40,     22,          18,            16,           22,          18,               18,          50 ],
+  },
+  downtimes: {
+    sheetName: 'Downtime Log',
+    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'machine', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'],
+    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Machine', 'Unit', 'Component', 'Type', 'Occurrence',     'Recovery',       'Duration (min)',   'Technician', 'Symptom', 'Cause', 'Countermeasure'],
+    widths:    [ 6,    22,                   22,                   14,     8,      30,        40,     22,          28,     18,                18,                14,                 16,           50,        50,      50 ],
+  },
+};
+
 async function handleExport(url, env) {
   const type = url.searchParams.get('type');
-
-  let tableName, columns;
-  if (type === 'para_changes') {
-    tableName = 'para_changes';
-    columns = ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'machine', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason'];
-  } else if (type === 'downtimes') {
-    tableName = 'downtimes';
-    columns = ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'machine', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'];
-  } else {
+  const cfg = EXPORT_COLUMNS[type];
+  if (!cfg) {
     return jsonResponse({ ok: false, error: 'Use ?type=para_changes or ?type=downtimes' }, 400);
   }
 
   const result = await env.DB.prepare(
-    `SELECT ${columns.join(', ')} FROM ${tableName} ORDER BY server_timestamp DESC`
+    `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} ORDER BY server_timestamp DESC`
   ).all();
 
-  const escape = (v) => {
-    if (v === null || v === undefined) return '';
-    const s = String(v);
-    if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  };
-
-  const lines = [columns.join(',')];
+  // Header row + data rows.
+  const aoa = [cfg.headers];
   for (const row of (result.results || [])) {
-    lines.push(columns.map(c => escape(row[c])).join(','));
+    aoa.push(cfg.dbColumns.map(c => row[c] == null ? '' : row[c]));
   }
-  const csv = '﻿' + lines.join('\n'); // BOM for Excel UTF-8
 
-  const filename = `logbook-uc-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = cfg.widths.map(wch => ({ wch }));
 
-  return new Response(csv, {
+  // Style the header row: bold white text on Ultium-blue, slightly taller row.
+  const headerStyle = {
+    font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: '003DA5' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border: {
+      bottom: { style: 'thin', color: { rgb: '002A73' } },
+    },
+  };
+  for (let c = 0; c < cfg.headers.length; c++) {
+    const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[cellRef]) {
+      ws[cellRef].s = headerStyle;
+    }
+  }
+  ws['!rows'] = [{ hpt: 22 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, cfg.sheetName);
+
+  const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+
+  const filename = `logbook-uc-${type}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+  return new Response(buffer, {
     status: 200,
     headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="${filename}"`,
       ...CORS_HEADERS,
     },
   });
 }
+
