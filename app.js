@@ -501,10 +501,35 @@
 
   // ----- Wire it all up -----
 
+  // Wire the Data Export footer's download links from CONFIG.apiUrl. If the
+  // backend is not configured, render the buttons as visually disabled.
+  function wireExportLinks() {
+    const base = (CONFIG.apiUrl || "").trim().replace(/\/+$/, "");
+    const paraLink = document.getElementById("export-para");
+    const dtLink = document.getElementById("export-downtime");
+    if (!paraLink || !dtLink) return;
+
+    if (!base) {
+      [paraLink, dtLink].forEach(function (a) {
+        a.href = "#";
+        a.classList.add("disabled");
+        a.setAttribute("aria-disabled", "true");
+        a.addEventListener("click", function (e) {
+          e.preventDefault();
+        });
+      });
+      return;
+    }
+
+    paraLink.href = `${base}/export?type=para_changes`;
+    dtLink.href = `${base}/export?type=downtimes`;
+  }
+
   function init() {
     applyHeader();
     populateAllDropdowns();
     setDefaultDateTimes();
+    wireExportLinks();
 
     document.querySelectorAll(".tab-button").forEach(function (btn) {
       btn.addEventListener("click", function () {

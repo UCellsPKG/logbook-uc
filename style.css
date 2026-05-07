@@ -494,6 +494,60 @@ body.lang-en .lang-en-only {
 /* When .en or .ko is also marked .lang-X-only, the parent rules above
    already handle visibility — keep this block minimal. */
 
+/* ===== Data export footer ===== */
+.data-export {
+  background: var(--form-bg);
+  margin-top: 12px;
+  padding: 18px max(16px, env(safe-area-inset-right)) 24px
+    max(16px, env(safe-area-inset-left));
+  border-top: 1px solid #e0e0e0;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.export-title {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--label-text);
+}
+
+.export-hint {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--muted-text);
+}
+
+.export-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.export-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (min-width: 600px) {
+  .export-buttons {
+    flex-direction: row;
+  }
+  .export-buttons .export-btn {
+    flex: 1;
+  }
+}
+
 /* ===== Responsive — wider screens ===== */
 @media (min-width: 600px) {
   .app-header h1 {
