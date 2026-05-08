@@ -417,6 +417,16 @@ body {
   line-height: 1.5;
 }
 
+/* ===== Header controls (lang switcher + process switch) ===== */
+.header-controls {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  align-self: flex-start;
+}
+
 /* ===== Language switcher ===== */
 .lang-switcher {
   flex: 0 0 auto;
@@ -427,7 +437,38 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 6px;
   overflow: hidden;
-  align-self: flex-start;
+}
+
+/* ===== Process switch (PKG ↔ LnS) ===== */
+.process-switch {
+  display: block;
+  text-align: center;
+  background: #16a34a;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.05s ease;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.process-switch:hover {
+  background: #15803d;
+}
+
+.process-switch:active {
+  transform: translateY(1px);
+}
+
+.process-switch:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
 }
 
 .lang-btn {

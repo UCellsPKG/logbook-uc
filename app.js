@@ -296,8 +296,9 @@
   // ----- Kakao text builders -----
 
   function buildParaChangeText(data) {
+    const proc = CONFIG.processLabel || "PKG";
     const lines = [
-      "[UC PKG Para 변경 / Parameter Change]",
+      `[UC ${proc} Para 변경 / Parameter Change]`,
       "━━━━━━━━━━━━━━━━━━━",
       `Site: ${data.site} | 호기: ${data.line}`,
       `Section: ${data.section} > ${data.unit} > ${data.assy}`,
@@ -317,8 +318,9 @@
   }
 
   function buildDowntimeText(data) {
+    const proc = CONFIG.processLabel || "PKG";
     const lines = [
-      `[UC PKG 부동 / Downtime — ${data.type}]`,
+      `[UC ${proc} 부동 / Downtime — ${data.type}]`,
       "━━━━━━━━━━━━━━━━━━━",
       `Site: ${data.site} | 호기: ${data.line}`,
       `Section: ${data.section} > ${data.unit} > ${data.assy}`,
