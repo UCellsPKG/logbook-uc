@@ -207,24 +207,23 @@ const EXPORT_COLUMNS = {
 };
 
 async function handleExport(url, env) {
-  const type = url.searchParams.get('type');
-  const cfg = EXPORT_COLUMNS[type];
-  if (!cfg) {
-    return jsonResponse({ ok: false, error: 'Use ?type=para_changes or ?type=downtimes' }, 400);
-  }
-
   // Optional &process=PKG or &process=LnS narrows the export to one logbook.
-  // Omitted = full export (PKG + LnS combined), preserving the original
-  // unfiltered behavior for the daily email and any old bookmarks.
+  // Omitted = full export (PKG + LnS combined).
   const VALID_PROCESSES = new Set(['PKG', 'LnS']);
   const procParam = url.searchParams.get('process');
   const processFilter = VALID_PROCESSES.has(procParam) ? procParam : null;
 
-  const buffer = await buildXlsxBuffer(type, env, processFilter);
+  // ?type= picks one table; omitted/invalid = bundle both as separate tabs
+  // (the default for the UI download link — one click, one file, two tabs).
+  const ALL_TYPES = ['para_changes', 'downtimes'];
+  const typeParam = url.searchParams.get('type');
+  const types = ALL_TYPES.includes(typeParam) ? [typeParam] : ALL_TYPES;
+
+  const buffer = await buildXlsxBuffer(types, env, processFilter);
   const today = new Date().toISOString().slice(0, 10);
-  const filename = processFilter
-    ? `logbook-uc-${processFilter}-${type}-${today}.xlsx`
-    : `logbook-uc-${type}-${today}.xlsx`;
+  const slug = types.length === 1 ? `-${types[0]}` : '';
+  const procSlug = processFilter ? `-${processFilter}` : '';
+  const filename = `logbook-uc${procSlug}${slug}-${today}.xlsx`;
 
   return new Response(buffer, {
     status: 200,
@@ -236,50 +235,55 @@ async function handleExport(url, env) {
   });
 }
 
-// Generates a styled XLSX ArrayBuffer for the given table type. Reused by
-// both the /export endpoint (download) and the daily email attachment path.
+// Generates a styled XLSX ArrayBuffer with one sheet per table type.
+// Reused by both the /export endpoint (download) and the daily email path.
 // processFilter (optional) narrows to one logbook (PKG / LnS).
-async function buildXlsxBuffer(type, env, processFilter = null) {
-  const cfg = EXPORT_COLUMNS[type];
-
-  const sql = processFilter
-    ? `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} WHERE process = ? ORDER BY server_timestamp DESC`
-    : `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} ORDER BY server_timestamp DESC`;
-  const stmt = processFilter
-    ? env.DB.prepare(sql).bind(processFilter)
-    : env.DB.prepare(sql);
-  const result = await stmt.all();
+async function buildXlsxBuffer(typeOrTypes, env, processFilter = null) {
+  const types = Array.isArray(typeOrTypes) ? typeOrTypes : [typeOrTypes];
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Logbook UC';
   wb.created = new Date();
 
-  const ws = wb.addWorksheet(cfg.sheetName, {
-    views: [{ state: 'frozen', ySplit: 1 }],
-  });
+  for (const type of types) {
+    const cfg = EXPORT_COLUMNS[type];
+    if (!cfg) continue;
 
-  ws.columns = cfg.dbColumns.map((dbCol, i) => ({
-    header: cfg.headers[i],
-    key: dbCol,
-    width: cfg.widths[i],
-  }));
+    const sql = processFilter
+      ? `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} WHERE process = ? ORDER BY server_timestamp DESC`
+      : `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} ORDER BY server_timestamp DESC`;
+    const stmt = processFilter
+      ? env.DB.prepare(sql).bind(processFilter)
+      : env.DB.prepare(sql);
+    const result = await stmt.all();
 
-  for (const row of (result.results || [])) {
-    const rowObj = {};
-    for (const col of cfg.dbColumns) {
-      rowObj[col] = row[col] == null ? '' : row[col];
+    const ws = wb.addWorksheet(cfg.sheetName, {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    ws.columns = cfg.dbColumns.map((dbCol, i) => ({
+      header: cfg.headers[i],
+      key: dbCol,
+      width: cfg.widths[i],
+    }));
+
+    for (const row of (result.results || [])) {
+      const rowObj = {};
+      for (const col of cfg.dbColumns) {
+        rowObj[col] = row[col] == null ? '' : row[col];
+      }
+      ws.addRow(rowObj);
     }
-    ws.addRow(rowObj);
-  }
 
-  const headerRow = ws.getRow(1);
-  headerRow.height = 22;
-  headerRow.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.alignment = { horizontal: 'left', vertical: 'middle' };
-  headerRow.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF003DA5' } };
-    cell.border = { bottom: { style: 'thin', color: { argb: 'FF002A73' } } };
-  });
+    const headerRow = ws.getRow(1);
+    headerRow.height = 22;
+    headerRow.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.alignment = { horizontal: 'left', vertical: 'middle' };
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF003DA5' } };
+      cell.border = { bottom: { style: 'thin', color: { argb: 'FF002A73' } } };
+    });
+  }
 
   return await wb.xlsx.writeBuffer();
 }
