@@ -297,44 +297,44 @@
 
   function buildParaChangeText(data) {
     const lines = [
-      "🔧 [UC PKG Para 변경 / Parameter Change]",
+      "[UC PKG Para 변경 / Parameter Change]",
       "━━━━━━━━━━━━━━━━━━━",
-      `📍 Site: ${data.site} | 호기: ${data.line}`,
-      `🏭 ${data.section} > ${data.unit} > ${data.assy}`,
+      `Site: ${data.site} | 호기: ${data.line}`,
+      `Section: ${data.section} > ${data.unit} > ${data.assy}`,
     ];
-    if (data.anode_cathode) lines.push(`⚡ ${data.anode_cathode}`);
+    if (data.anode_cathode) lines.push(`A/C: ${data.anode_cathode}`);
     lines.push(
       "",
-      `📝 변경 Para: ${data.param}`,
-      `   이전값: ${data.previous_value}`,
-      `   변경값: ${data.new_value}`,
+      `변경 Para: ${data.param}`,
+      `이전값: ${data.previous_value}`,
+      `변경값: ${data.new_value}`,
       "",
-      `💬 사유: ${data.reason}`,
+      `사유: ${data.reason}`,
       "",
-      `👤 ${data.changed_by} @ ${formatDateTime(data.change_time)}`
+      `By: ${data.changed_by} @ ${formatDateTime(data.change_time)}`
     );
     return lines.join("\n");
   }
 
   function buildDowntimeText(data) {
     const lines = [
-      `🚨 [UC PKG 부동 / Downtime — ${data.type}]`,
+      `[UC PKG 부동 / Downtime — ${data.type}]`,
       "━━━━━━━━━━━━━━━━━━━",
-      `📍 Site: ${data.site} | 호기: ${data.line}`,
-      `🏭 ${data.section} > ${data.unit} > ${data.assy}`,
+      `Site: ${data.site} | 호기: ${data.line}`,
+      `Section: ${data.section} > ${data.unit} > ${data.assy}`,
     ];
-    if (data.anode_cathode) lines.push(`⚡ ${data.anode_cathode}`);
+    if (data.anode_cathode) lines.push(`A/C: ${data.anode_cathode}`);
     lines.push(
       "",
-      `⏰ 발생: ${formatDateTime(data.occurrence_time)}`,
-      `✅ 복구: ${formatDateTime(data.recovery_time)}`,
-      `⏱️ Duration: ${data.duration_minutes} min`,
+      `발생: ${formatDateTime(data.occurrence_time)}`,
+      `복구: ${formatDateTime(data.recovery_time)}`,
+      `Duration: ${data.duration_minutes} min`,
       "",
-      `🔍 현상: ${data.symptom}`,
-      `❓ 원인: ${data.cause}`,
-      `🛠️ 조치: ${data.countermeasure}`,
+      `현상: ${data.symptom}`,
+      `원인: ${data.cause}`,
+      `조치: ${data.countermeasure}`,
       "",
-      `👤 ${data.technician}`
+      `By: ${data.technician}`
     );
     return lines.join("\n");
   }
