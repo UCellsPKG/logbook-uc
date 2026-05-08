@@ -433,6 +433,7 @@
     const payload = Object.assign(
       {
         formType: formType,
+        process: CONFIG.processLabel || "PKG",
         site: CONFIG.site,
         client_timestamp: new Date().toISOString(),
       },
@@ -543,10 +544,13 @@
 
   // ----- Wire it all up -----
 
-  // Wire the Data Export footer's download links from CONFIG.apiUrl. If the
-  // backend is not configured, render the buttons as visually disabled.
+  // Wire the Data Export footer's download links from CONFIG.apiUrl. The
+  // &process= filter narrows the export to just this page's logbook (PKG
+  // or LnS) so the two never get mixed in a single download. If the backend
+  // is not configured, render the buttons as visually disabled.
   function wireExportLinks() {
     const base = (CONFIG.apiUrl || "").trim().replace(/\/+$/, "");
+    const proc = encodeURIComponent(CONFIG.processLabel || "PKG");
     const paraLink = document.getElementById("export-para");
     const dtLink = document.getElementById("export-downtime");
     if (!paraLink || !dtLink) return;
@@ -563,8 +567,8 @@
       return;
     }
 
-    paraLink.href = `${base}/export?type=para_changes`;
-    dtLink.href = `${base}/export?type=downtimes`;
+    paraLink.href = `${base}/export?type=para_changes&process=${proc}`;
+    dtLink.href = `${base}/export?type=downtimes&process=${proc}`;
   }
 
   function init() {

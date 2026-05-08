@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS para_changes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   server_timestamp TEXT NOT NULL DEFAULT (datetime('now')),
   client_timestamp TEXT,
+  process TEXT NOT NULL DEFAULT 'PKG',
   site TEXT,
   line TEXT,
   section TEXT,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS downtimes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   server_timestamp TEXT NOT NULL DEFAULT (datetime('now')),
   client_timestamp TEXT,
+  process TEXT NOT NULL DEFAULT 'PKG',
   site TEXT,
   line TEXT,
   section TEXT,
@@ -37,9 +39,11 @@ CREATE TABLE IF NOT EXISTS downtimes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_para_server_timestamp ON para_changes(server_timestamp);
+CREATE INDEX IF NOT EXISTS idx_para_process ON para_changes(process);
 CREATE INDEX IF NOT EXISTS idx_para_section ON para_changes(section);
 CREATE INDEX IF NOT EXISTS idx_para_line ON para_changes(line);
 CREATE INDEX IF NOT EXISTS idx_dt_server_timestamp ON downtimes(server_timestamp);
+CREATE INDEX IF NOT EXISTS idx_dt_process ON downtimes(process);
 CREATE INDEX IF NOT EXISTS idx_dt_section ON downtimes(section);
 CREATE INDEX IF NOT EXISTS idx_dt_line ON downtimes(line);
 CREATE INDEX IF NOT EXISTS idx_dt_type ON downtimes(type);

@@ -7,9 +7,10 @@
 // install manuals (chapter 3). Pending engineer review (May 2026).
 
 const CONFIG = {
-  // Set after deploying a Cloudflare Worker for LnS, or reuse the PKG one
-  // if you add a process-discriminator column on the backend.
-  apiUrl: "",
+  // Same Cloudflare Worker as the PKG page. Submissions are tagged with
+  // `process` so the two logbooks stay independently filterable on export
+  // (see worker/src/index.js + the &process= filter on /export).
+  apiUrl: "https://logbook-uc.ucellspkg.workers.dev",
 
   processLabel: "LnS",
   appTitle: "UC LnS 파라변경이력 부동내역 양식",

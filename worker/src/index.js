@@ -79,15 +79,22 @@ async function handleSubmit(request, env) {
     return jsonResponse({ ok: false, error: 'Missing formType' }, 400);
   }
 
+  // process tags the row as PKG or LnS so the two logbook pages stay
+  // independently filterable on export. Old clients may not send it;
+  // default to PKG for backward compatibility.
+  const VALID_PROCESSES = new Set(['PKG', 'LnS']);
+  const process = VALID_PROCESSES.has(body.process) ? body.process : 'PKG';
+
   try {
     let result;
     if (formType === 'para_change') {
       result = await env.DB.prepare(
         `INSERT INTO para_changes
-         (client_timestamp, site, line, section, anode_cathode, unit, assy, change_time, changed_by, param, previous_value, new_value, reason)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (client_timestamp, process, site, line, section, anode_cathode, unit, assy, change_time, changed_by, param, previous_value, new_value, reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         body.client_timestamp ?? null,
+        process,
         body.site ?? null,
         body.line ?? null,
         body.section ?? null,
@@ -104,10 +111,11 @@ async function handleSubmit(request, env) {
     } else if (formType === 'downtime') {
       result = await env.DB.prepare(
         `INSERT INTO downtimes
-         (client_timestamp, site, line, section, anode_cathode, unit, assy, type, occurrence_time, recovery_time, duration_minutes, technician, symptom, cause, countermeasure)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (client_timestamp, process, site, line, section, anode_cathode, unit, assy, type, occurrence_time, recovery_time, duration_minutes, technician, symptom, cause, countermeasure)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         body.client_timestamp ?? null,
+        process,
         body.site ?? null,
         body.line ?? null,
         body.section ?? null,
@@ -186,15 +194,15 @@ async function postToTeams(webhookUrl, formType, body) {
 const EXPORT_COLUMNS = {
   para_changes: {
     sheetName: 'Parameter Changes',
-    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason'],
-    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Section', 'A/C',          'Unit', 'Component', 'Change Time', 'Changed By', 'Parameter', 'Previous Value', 'New Value', 'Reason'],
-    widths:    [ 6,    22,                   22,                   14,     8,      18,        8,              40,     22,          18,            16,           22,          18,               18,          50 ],
+    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'process', 'site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason'],
+    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Process', 'Site', 'Line', 'Section', 'A/C',          'Unit', 'Component', 'Change Time', 'Changed By', 'Parameter', 'Previous Value', 'New Value', 'Reason'],
+    widths:    [ 6,    22,                   22,                   8,         14,     8,      18,        8,              40,     22,          18,            16,           22,          18,               18,          50 ],
   },
   downtimes: {
     sheetName: 'Downtime Log',
-    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'],
-    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Section', 'A/C',          'Unit', 'Component', 'Type', 'Occurrence',     'Recovery',       'Duration (min)',   'Technician', 'Symptom', 'Cause', 'Countermeasure'],
-    widths:    [ 6,    22,                   22,                   14,     8,      18,        8,              40,     22,          28,     18,                18,                14,                 16,           50,        50,      50 ],
+    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'process', 'site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'],
+    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Process', 'Site', 'Line', 'Section', 'A/C',          'Unit', 'Component', 'Type', 'Occurrence',     'Recovery',       'Duration (min)',   'Technician', 'Symptom', 'Cause', 'Countermeasure'],
+    widths:    [ 6,    22,                   22,                   8,         14,     8,      18,        8,              40,     22,          28,     18,                18,                14,                 16,           50,        50,      50 ],
   },
 };
 
@@ -205,8 +213,18 @@ async function handleExport(url, env) {
     return jsonResponse({ ok: false, error: 'Use ?type=para_changes or ?type=downtimes' }, 400);
   }
 
-  const buffer = await buildXlsxBuffer(type, env);
-  const filename = `logbook-uc-${type}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  // Optional &process=PKG or &process=LnS narrows the export to one logbook.
+  // Omitted = full export (PKG + LnS combined), preserving the original
+  // unfiltered behavior for the daily email and any old bookmarks.
+  const VALID_PROCESSES = new Set(['PKG', 'LnS']);
+  const procParam = url.searchParams.get('process');
+  const processFilter = VALID_PROCESSES.has(procParam) ? procParam : null;
+
+  const buffer = await buildXlsxBuffer(type, env, processFilter);
+  const today = new Date().toISOString().slice(0, 10);
+  const filename = processFilter
+    ? `logbook-uc-${processFilter}-${type}-${today}.xlsx`
+    : `logbook-uc-${type}-${today}.xlsx`;
 
   return new Response(buffer, {
     status: 200,
@@ -220,12 +238,17 @@ async function handleExport(url, env) {
 
 // Generates a styled XLSX ArrayBuffer for the given table type. Reused by
 // both the /export endpoint (download) and the daily email attachment path.
-async function buildXlsxBuffer(type, env) {
+// processFilter (optional) narrows to one logbook (PKG / LnS).
+async function buildXlsxBuffer(type, env, processFilter = null) {
   const cfg = EXPORT_COLUMNS[type];
 
-  const result = await env.DB.prepare(
-    `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} ORDER BY server_timestamp DESC`
-  ).all();
+  const sql = processFilter
+    ? `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} WHERE process = ? ORDER BY server_timestamp DESC`
+    : `SELECT ${cfg.dbColumns.join(', ')} FROM ${type} ORDER BY server_timestamp DESC`;
+  const stmt = processFilter
+    ? env.DB.prepare(sql).bind(processFilter)
+    : env.DB.prepare(sql);
+  const result = await stmt.all();
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Logbook UC';
