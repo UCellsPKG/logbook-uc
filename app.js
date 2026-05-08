@@ -122,29 +122,55 @@
 
     // Para Change tab
     populateSelect(document.getElementById("para-line"), d.line);
-    populateSelect(document.getElementById("para-machine"), d.machine);
+    populateSelect(document.getElementById("para-section"), d.section);
+    populateSelect(document.getElementById("para-ac"), d.anodeCathode);
     populateSelect(document.getElementById("para-assy"), d.assy);
     populateUnitFor("para");
+    updateAcVisibility("para");
 
     // Downtime tab
     populateSelect(document.getElementById("dt-type"), d.type);
     populateSelect(document.getElementById("dt-line"), d.line);
-    populateSelect(document.getElementById("dt-machine"), d.machine);
+    populateSelect(document.getElementById("dt-section"), d.section);
+    populateSelect(document.getElementById("dt-ac"), d.anodeCathode);
     populateSelect(document.getElementById("dt-assy"), d.assy);
     populateUnitFor("dt");
+    updateAcVisibility("dt");
   }
 
-  // Cascading: read the chosen machine from the {prefix}-machine select and
-  // repopulate {prefix}-unit from CONFIG.dropdowns.machineUnits[machine].
-  // Until a machine is picked the unit select is rendered disabled.
+  // Cascading: read the chosen section from the {prefix}-section select and
+  // repopulate {prefix}-unit from CONFIG.dropdowns.sectionUnits[section].
+  // Until a section is picked the unit select is rendered disabled.
   function populateUnitFor(prefix) {
-    const machineEl = document.getElementById(`${prefix}-machine`);
+    const sectionEl = document.getElementById(`${prefix}-section`);
     const unitEl = document.getElementById(`${prefix}-unit`);
-    const machine = machineEl ? machineEl.value : "";
-    const map = (CONFIG.dropdowns && CONFIG.dropdowns.machineUnits) || {};
-    const units = map[machine] || [];
+    const section = sectionEl ? sectionEl.value : "";
+    const map = (CONFIG.dropdowns && CONFIG.dropdowns.sectionUnits) || {};
+    const units = map[section] || [];
     populateSelect(unitEl, units);
-    unitEl.disabled = !machine;
+    unitEl.disabled = !section;
+  }
+
+  // Show the Anode/Cathode field only when Section === "Tab Welder".
+  // The field's `required` attribute is also toggled so hidden fields
+  // don't block submission.
+  function updateAcVisibility(prefix) {
+    const sectionEl = document.getElementById(`${prefix}-section`);
+    const acField = document.getElementById(`${prefix}-ac-field`);
+    const acSelect = document.getElementById(`${prefix}-ac`);
+    if (!sectionEl || !acField || !acSelect) return;
+    const show = sectionEl.value === "Tab Welder";
+    acField.hidden = !show;
+    // Disabled fields aren't included in FormData submissions, so when A/C
+    // is hidden the worker receives no anode_cathode key (stored as NULL).
+    acSelect.disabled = !show;
+    if (show) {
+      acSelect.setAttribute("required", "");
+    } else {
+      acSelect.removeAttribute("required");
+      acSelect.value = "";
+      clearFieldError(acSelect.form, "anode_cathode");
+    }
   }
 
   // ----- Header / title from config -----
@@ -270,11 +296,14 @@
   // ----- Kakao text builders -----
 
   function buildParaChangeText(data) {
-    return [
+    const lines = [
       "🔧 [UC PKG Para 변경 / Parameter Change]",
       "━━━━━━━━━━━━━━━━━━━",
       `📍 Site: ${data.site} | 호기: ${data.line}`,
-      `🏭 ${data.machine} > ${data.unit} > ${data.assy}`,
+      `🏭 ${data.section} > ${data.unit} > ${data.assy}`,
+    ];
+    if (data.anode_cathode) lines.push(`⚡ ${data.anode_cathode}`);
+    lines.push(
       "",
       `📝 변경 Para: ${data.param}`,
       `   이전값: ${data.previous_value}`,
@@ -282,16 +311,20 @@
       "",
       `💬 사유: ${data.reason}`,
       "",
-      `👤 ${data.changed_by} @ ${formatDateTime(data.change_time)}`,
-    ].join("\n");
+      `👤 ${data.changed_by} @ ${formatDateTime(data.change_time)}`
+    );
+    return lines.join("\n");
   }
 
   function buildDowntimeText(data) {
-    return [
+    const lines = [
       `🚨 [UC PKG 부동 / Downtime — ${data.type}]`,
       "━━━━━━━━━━━━━━━━━━━",
       `📍 Site: ${data.site} | 호기: ${data.line}`,
-      `🏭 ${data.machine} > ${data.unit} > ${data.assy}`,
+      `🏭 ${data.section} > ${data.unit} > ${data.assy}`,
+    ];
+    if (data.anode_cathode) lines.push(`⚡ ${data.anode_cathode}`);
+    lines.push(
       "",
       `⏰ 발생: ${formatDateTime(data.occurrence_time)}`,
       `✅ 복구: ${formatDateTime(data.recovery_time)}`,
@@ -301,8 +334,9 @@
       `❓ 원인: ${data.cause}`,
       `🛠️ 조치: ${data.countermeasure}`,
       "",
-      `👤 ${data.technician}`,
-    ].join("\n");
+      `👤 ${data.technician}`
+    );
+    return lines.join("\n");
   }
 
   // ----- Payload assembly -----
@@ -543,16 +577,18 @@
       });
     });
 
-    // Cascading Machine → Unit (per tab).
+    // Cascading Section → Unit (per tab) + show/hide Anode/Cathode field.
     document
-      .getElementById("para-machine")
+      .getElementById("para-section")
       .addEventListener("change", function () {
         populateUnitFor("para");
+        updateAcVisibility("para");
       });
     document
-      .getElementById("dt-machine")
+      .getElementById("dt-section")
       .addEventListener("change", function () {
         populateUnitFor("dt");
+        updateAcVisibility("dt");
       });
 
     document.querySelectorAll(".lang-btn").forEach(function (btn) {

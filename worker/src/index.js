@@ -70,13 +70,14 @@ async function handleSubmit(request, env) {
     if (formType === 'para_change') {
       result = await env.DB.prepare(
         `INSERT INTO para_changes
-         (client_timestamp, site, line, machine, unit, assy, change_time, changed_by, param, previous_value, new_value, reason)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (client_timestamp, site, line, section, anode_cathode, unit, assy, change_time, changed_by, param, previous_value, new_value, reason)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         body.client_timestamp ?? null,
         body.site ?? null,
         body.line ?? null,
-        body.machine ?? null,
+        body.section ?? null,
+        body.anode_cathode ?? null,
         body.unit ?? null,
         body.assy ?? null,
         body.change_time ?? null,
@@ -89,13 +90,14 @@ async function handleSubmit(request, env) {
     } else if (formType === 'downtime') {
       result = await env.DB.prepare(
         `INSERT INTO downtimes
-         (client_timestamp, site, line, machine, unit, assy, type, occurrence_time, recovery_time, duration_minutes, technician, symptom, cause, countermeasure)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (client_timestamp, site, line, section, anode_cathode, unit, assy, type, occurrence_time, recovery_time, duration_minutes, technician, symptom, cause, countermeasure)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         body.client_timestamp ?? null,
         body.site ?? null,
         body.line ?? null,
-        body.machine ?? null,
+        body.section ?? null,
+        body.anode_cathode ?? null,
         body.unit ?? null,
         body.assy ?? null,
         body.type ?? null,
@@ -132,8 +134,8 @@ async function postToTeams(webhookUrl, formType, body) {
   const title = isPara ? '🔧 Parameter Change Logged' : '🚨 Downtime Event Logged';
 
   const fields = isPara
-    ? ['site', 'line', 'machine', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason']
-    : ['site', 'line', 'machine', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'];
+    ? ['site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason']
+    : ['site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'];
 
   const facts = [];
   for (const f of fields) {
@@ -170,15 +172,15 @@ async function postToTeams(webhookUrl, formType, body) {
 const EXPORT_COLUMNS = {
   para_changes: {
     sheetName: 'Parameter Changes',
-    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'machine', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason'],
-    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Machine', 'Unit', 'Component', 'Change Time', 'Changed By', 'Parameter', 'Previous Value', 'New Value', 'Reason'],
-    widths:    [ 6,    22,                   22,                   14,     8,      30,        40,     22,          18,            16,           22,          18,               18,          50 ],
+    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'change_time', 'changed_by', 'param', 'previous_value', 'new_value', 'reason'],
+    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Section', 'A/C',          'Unit', 'Component', 'Change Time', 'Changed By', 'Parameter', 'Previous Value', 'New Value', 'Reason'],
+    widths:    [ 6,    22,                   22,                   14,     8,      18,        8,              40,     22,          18,            16,           22,          18,               18,          50 ],
   },
   downtimes: {
     sheetName: 'Downtime Log',
-    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'machine', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'],
-    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Machine', 'Unit', 'Component', 'Type', 'Occurrence',     'Recovery',       'Duration (min)',   'Technician', 'Symptom', 'Cause', 'Countermeasure'],
-    widths:    [ 6,    22,                   22,                   14,     8,      30,        40,     22,          28,     18,                18,                14,                 16,           50,        50,      50 ],
+    dbColumns: ['id', 'server_timestamp', 'client_timestamp', 'site', 'line', 'section', 'anode_cathode', 'unit', 'assy', 'type', 'occurrence_time', 'recovery_time', 'duration_minutes', 'technician', 'symptom', 'cause', 'countermeasure'],
+    headers:   ['ID', 'Logged At (Server)', 'Logged At (Client)', 'Site', 'Line', 'Section', 'A/C',          'Unit', 'Component', 'Type', 'Occurrence',     'Recovery',       'Duration (min)',   'Technician', 'Symptom', 'Cause', 'Countermeasure'],
+    widths:    [ 6,    22,                   22,                   14,     8,      18,        8,              40,     22,          28,     18,                18,                14,                 16,           50,        50,      50 ],
   },
 };
 

@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS para_changes (
   client_timestamp TEXT,
   site TEXT,
   line TEXT,
-  machine TEXT,
+  section TEXT,
+  anode_cathode TEXT,
   unit TEXT,
   assy TEXT,
   change_time TEXT,
@@ -21,7 +22,8 @@ CREATE TABLE IF NOT EXISTS downtimes (
   client_timestamp TEXT,
   site TEXT,
   line TEXT,
-  machine TEXT,
+  section TEXT,
+  anode_cathode TEXT,
   unit TEXT,
   assy TEXT,
   type TEXT,
@@ -35,9 +37,9 @@ CREATE TABLE IF NOT EXISTS downtimes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_para_server_timestamp ON para_changes(server_timestamp);
-CREATE INDEX IF NOT EXISTS idx_para_machine ON para_changes(machine);
+CREATE INDEX IF NOT EXISTS idx_para_section ON para_changes(section);
 CREATE INDEX IF NOT EXISTS idx_para_line ON para_changes(line);
 CREATE INDEX IF NOT EXISTS idx_dt_server_timestamp ON downtimes(server_timestamp);
-CREATE INDEX IF NOT EXISTS idx_dt_machine ON downtimes(machine);
+CREATE INDEX IF NOT EXISTS idx_dt_section ON downtimes(section);
 CREATE INDEX IF NOT EXISTS idx_dt_line ON downtimes(line);
 CREATE INDEX IF NOT EXISTS idx_dt_type ON downtimes(type);
