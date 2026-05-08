@@ -17,7 +17,7 @@ const CONFIG = {
       "6-1", "6-2", "7-1", "7-2", "8-1", "8-2", "9-1", "9-2", "10-1", "10-2"
     ],
 
-    // 6-section structure proposed by production engineering — physical
+    // 6-section structure refined by production engineering review — physical
     // line layout from infeed to outfeed.
     section: [
       "Loader",
@@ -29,7 +29,8 @@ const CONFIG = {
     ],
 
     // Cascading: Unit options filter based on the selected Section.
-    // Source: LGES Operation Manual sections 3.1.1-3.1.96
+    // Source: LGES Operation Manual sections 3.1.1-3.1.96, with subsystem
+    // → section assignments per engineering review (Ansik Park, May 2026).
     sectionUnits: {
 
       "Loader": [
@@ -39,17 +40,17 @@ const CONFIG = {
         "Stacked Tray Separator",
         "Tray (Empty) Stacker",
         "Box Aligner",
-        "Stacked Tray Barcode Reader",
-        // Cell Loader IN (3.1.7-3.1.12)
+        "Stacked Tray Barcode Reader"
+      ],
+
+      "Tab Welder": [
+        // Cell Loader IN (3.1.7-3.1.12) — moved here per engineering review
         "Cell Pick & Place (#2-Cell)",
         "Cell Conveyor",
         "Cell Aligner (Loader)",
         "Corner Sealing",
         "Cell Pick & Place (#LMS In)",
-        "Cell Buffer Stage"
-      ],
-
-      "Tab Welder": [
+        "Cell Buffer Stage",
         // Tab Welder (3.1.13-3.1.28)
         "Cell Carrier (#Pallet) [#1~30]",
         "LMS Track",
@@ -78,7 +79,9 @@ const CONFIG = {
         "Lead Pick & Place [02B] (#2)",
         "Lead Align Shuttle",
         "Lead Align Vision",
-        "Lead Pick & Place [01A] (#3)"
+        "Lead Pick & Place [01A] (#3)",
+        // Cell Loader OUT (3.1.40) — only LMS Out moved here per review
+        "Cell Pick & Place (#LMS Out)"
       ],
 
       "Pouch Forming": [
@@ -110,11 +113,17 @@ const CONFIG = {
         "Pouch Shuttle [3]",
         "Pouch Sealer [A,B]",
         "Pouch 2nd Sealer [A,B]",
-        "Lead Vision"
+        "Lead Vision",
+        // Cell Loader OUT (3.1.41-3.1.45) — moved here per engineering review
+        "NG Cell Pick & Place [A,B]",
+        "Cell Shuttle (#3-cell)",
+        "NG Cell Table",
+        "Buffer Table (#3-Cell)",
+        "Cell Aligner (#Mecha Align)"
       ],
 
       "EL Filling": [
-        // EL Filling & V-Sealer (3.1.70-3.1.96)
+        // EL Filling & V-Sealer (3.1.70-3.1.93)
         "Cell Pick & Place (Pallet In)",
         "Cell Pick & Place",
         "Cell Align & Rotating Table",
@@ -138,20 +147,14 @@ const CONFIG = {
         "NG Pick & Place [02] (#2-Cell)",
         "Cell Pick & Place [01] (EL Out)",
         "Cell Conveyor (#Pitch)",
-        "Cell Pick & Place [02] (#Tray In)",
-        "Tray (Empty) Conveyor",
-        "Stacked Tray Conveyor",
-        "Tray Shift (Cell Unloader Out)"
+        "Cell Pick & Place [02] (#Tray In)"
       ],
 
       "Unloader": [
-        // Cell Loader OUT (3.1.40-3.1.45)
-        "Cell Pick & Place (#LMS Out)",
-        "NG Cell Pick & Place [A,B]",
-        "Cell Shuttle (#3-cell)",
-        "NG Cell Table",
-        "Buffer Table (#3-Cell)",
-        "Cell Aligner (#Mecha Align)"
+        // EL Filling tail (3.1.94-3.1.96) — moved here per engineering review
+        "Tray (Empty) Conveyor",
+        "Stacked Tray Conveyor",
+        "Tray Shift (Cell Unloader Out)"
       ]
     },
 
