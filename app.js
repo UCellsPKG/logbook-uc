@@ -295,22 +295,35 @@
 
   // ----- Kakao text builders -----
 
+  // Strip Hangul (Korean) characters and tidy leftover " / " separators so a
+  // dropdown value like "잼 / Jam" or "Lead 2매 분리 / Separator" comes
+  // through as English. The form UI stays bilingual; only the generated
+  // KakaoTalk message is forced to English.
+  function toEnglish(s) {
+    if (s == null) return s;
+    return String(s)
+      .replace(/[ᄀ-ᇿ㄰-㆏가-힯]+/g, "")
+      .replace(/^\s*\/\s*|\s*\/\s*$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function buildParaChangeText(data) {
     const proc = CONFIG.processLabel || "PKG";
     const lines = [
-      `[UC ${proc} Para 변경 / Parameter Change]`,
+      `[UC ${proc} Parameter Change]`,
       "━━━━━━━━━━━━━━━━━━━",
-      `Site: ${data.site} | 호기: ${data.line}`,
-      `Section: ${data.section} > ${data.unit} > ${data.assy}`,
+      `Site: ${data.site} | Line: ${data.line}`,
+      `Section: ${data.section} > ${toEnglish(data.unit)} > ${data.assy}`,
     ];
     if (data.anode_cathode) lines.push(`A/C: ${data.anode_cathode}`);
     lines.push(
       "",
-      `변경 Para: ${data.param}`,
-      `이전값: ${data.previous_value}`,
-      `변경값: ${data.new_value}`,
+      `Parameter: ${data.param}`,
+      `Previous Value: ${data.previous_value}`,
+      `New Value: ${data.new_value}`,
       "",
-      `사유: ${data.reason}`,
+      `Reason: ${data.reason}`,
       "",
       `By: ${data.changed_by} @ ${formatDateTime(data.change_time)}`
     );
@@ -320,21 +333,21 @@
   function buildDowntimeText(data) {
     const proc = CONFIG.processLabel || "PKG";
     const lines = [
-      `[UC ${proc} 부동 / Downtime — ${data.type}]`,
+      `[UC ${proc} Downtime — ${toEnglish(data.type)}]`,
       "━━━━━━━━━━━━━━━━━━━",
-      `Site: ${data.site} | 호기: ${data.line}`,
-      `Section: ${data.section} > ${data.unit} > ${data.assy}`,
+      `Site: ${data.site} | Line: ${data.line}`,
+      `Section: ${data.section} > ${toEnglish(data.unit)} > ${data.assy}`,
     ];
     if (data.anode_cathode) lines.push(`A/C: ${data.anode_cathode}`);
     lines.push(
       "",
-      `발생: ${formatDateTime(data.occurrence_time)}`,
-      `복구: ${formatDateTime(data.recovery_time)}`,
+      `Occurrence: ${formatDateTime(data.occurrence_time)}`,
+      `Recovery: ${formatDateTime(data.recovery_time)}`,
       `Duration: ${data.duration_minutes} min`,
       "",
-      `현상: ${data.symptom}`,
-      `원인: ${data.cause}`,
-      `조치: ${data.countermeasure}`,
+      `Symptom: ${data.symptom}`,
+      `Cause: ${data.cause}`,
+      `Countermeasure: ${data.countermeasure}`,
       "",
       `By: ${data.technician}`
     );
