@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Logbook UC Viewer</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #5d6677;
+  --line: #dde1e8; --head: #eef1f5; --accent: #2457c5; --accent-soft: #e3ebfb;
+  --hover: #f3f6fb; --bad: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171c; --panel: #1b1f26; --text: #e4e7ec; --muted: #9aa3b2;
+    --line: #2c323c; --head: #222831; --accent: #7aa2f7; --accent-soft: #233150;
+    --hover: #212833; --bad: #f97066;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1b1f26; --text: #e4e7ec; --muted: #9aa3b2;
+  --line: #2c323c; --head: #222831; --accent: #7aa2f7; --accent-soft: #233150;
+  --hover: #212833; --bad: #f97066;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 13px/1.4 "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+  display: flex; flex-direction: column;
+}
+header { padding: 12px 16px 0; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+header .asof { color: var(--muted); font-size: 12px; }
+header .links { margin-left: auto; display: flex; gap: 8px; }
+header .links a, header .links button {
+  font: inherit; font-size: 12px; color: var(--accent); background: none; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 5px; padding: 3px 10px; text-decoration: none;
+}
+header .links a:hover, header .links button:hover { border-color: var(--accent); }
+nav.tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid var(--line); }
+nav.tabs button {
+  border: 1px solid transparent; border-bottom: none; background: none; color: var(--muted);
+  padding: 7px 14px; font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0;
+  margin-bottom: -1px;
+}
+nav.tabs button.active { background: var(--panel); color: var(--text); border-color: var(--line); }
+nav.tabs .n { font-weight: 400; color: var(--muted); margin-left: 4px; }
+.controls {
+  background: var(--panel); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px 10px;
+  align-items: flex-end; border-bottom: 1px solid var(--line);
+}
+.controls:empty { display: none; }
+.controls label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--muted); }
+.controls select, .controls input {
+  font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 5px; padding: 4px 6px; min-width: 80px; max-width: 150px;
+}
+.controls select[data-key="Unit"], .controls select[data-key="Type"] { max-width: 200px; }
+.controls select.set, .controls input.set { border-color: var(--accent); background: var(--accent-soft); }
+.controls input[type="search"] { min-width: 170px; }
+.controls button {
+  font: inherit; padding: 5px 12px; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--bg); color: var(--text); cursor: pointer;
+}
+.controls button:hover { border-color: var(--accent); }
+.summary { padding: 7px 16px; color: var(--muted); font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+.summary b { color: var(--text); }
+.tablewrap { flex: 1; overflow: auto; margin: 0 16px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+th, td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th {
+  position: sticky; top: 0; background: var(--head); font-weight: 600; white-space: nowrap;
+  cursor: pointer; user-select: none; z-index: 1;
+}
+th:hover { color: var(--accent); }
+th .arrow { color: var(--accent); margin-left: 3px; }
+tbody tr:hover td { background: var(--hover); }
+td.nw { white-space: nowrap; }
+td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.txt { white-space: pre-wrap; min-width: 220px; max-width: 360px; }
+td.mid { white-space: pre-wrap; min-width: 140px; max-width: 220px; }
+td.muted { color: var(--muted); }
+.empty { padding: 30px; text-align: center; color: var(--muted); }
+.empty.bad { color: var(--bad); }
+@media (max-width: 600px) {
+  .controls input[type="search"] { min-width: 0; width: 100%; }
+  .controls label.search { flex-basis: 100%; }
+  header .links { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Logbook UC</h1>
+  <span class="asof" id="asof">Loading&hellip;</span>
+  <span class="links">
+    <button type="button" id="refresh">Refresh</button>
+    <a id="xlsx" href="#">Download Excel</a>
+  </span>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<div class="controls" id="controls"></div>
+<div class="summary" id="summary"></div>
+<div class="tablewrap" id="wrap"><div class="empty">Loading the latest logbook data&hellip;</div></div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  // Data comes live from the Worker's /export (the same xlsx the Excel
+  // download gives), parsed in the browser. Nothing is stored in this page.
+  var API = (typeof CONFIG !== "undefined" && CONFIG.apiUrl ? CONFIG.apiUrl : "").replace(/\/+$/, "");
+  var collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
+  // Column layouts. cls: nw = no wrap, txt = long wrapped text, mid = medium wrap, num = number.
+  var TABS = {
+    para: {
+      label: "Parameter Changes", sheet: "Parameter Changes", timeKey: "Change Time",
+      filters: ["Process", "Line", "Section", "A/C", "Unit", "Component", "Changed By"],
+      cols: [
+        { k: "Change Time", label: "Change time", cls: "nw", fmt: "time" },
+        { k: "Process", cls: "nw" }, { k: "Line", cls: "nw" }, { k: "Section", cls: "nw" },
+        { k: "A/C", cls: "nw" }, { k: "Unit", cls: "mid" }, { k: "Component", cls: "nw" },
+        { k: "Parameter", cls: "mid" },
+        { k: "Previous Value", label: "Previous", cls: "mid" },
+        { k: "New Value", label: "New", cls: "mid" },
+        { k: "Reason", cls: "txt" }, { k: "Changed By", label: "Changed by", cls: "nw" },
+        { k: "ID", cls: "num muted" }
+      ]
+    },
+    dt: {
+      label: "Downtime Log", sheet: "Downtime Log", timeKey: "Occurrence",
+      filters: ["Process", "Line", "Section", "A/C", "Unit", "Component", "Type"],
+      cols: [
+        { k: "Occurrence", cls: "nw", fmt: "time" },
+        { k: "Recovery", cls: "nw", fmt: "time" },
+        { k: "Duration (min)", label: "Min", cls: "num" },
+        { k: "Process", cls: "nw" }, { k: "Line", cls: "nw" }, { k: "Section", cls: "nw" },
+        { k: "A/C", cls: "nw" }, { k: "Unit", cls: "mid" }, { k: "Component", cls: "nw" },
+        { k: "Type", cls: "mid" },
+        { k: "Symptom", cls: "txt" }, { k: "Cause", cls: "txt" }, { k: "Countermeasure", cls: "txt" },
+        { k: "Technician", cls: "mid" }, { k: "ID", cls: "num muted" }
+      ]
+    }
+  };
+
+  var state = {};
+  Object.keys(TABS).forEach(function (id) {
+    TABS[id].rows = [];
+    state[id] = { f: {}, q: "", from: "", to: "", sortKey: "ID", sortDir: -1 };
+  });
+  var active = "dt";
+  var loaded = false;
+
+  function esc(v) {
+    return String(v).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function stamp(d) {
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+      " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function fmtTime(v) { return v ? String(v).replace("T", " ").slice(0, 16) : ""; }
+  function blank(v) { return v == null || v === ""; }
+
+  // ----- Loading -----
+
+  function cleanRow(r) {
+    var out = {};
+    Object.keys(r).forEach(function (k) {
+      var v = r[k];
+      if (v instanceof Date) v = stamp(v);
+      if (typeof v === "string") v = v.trim() === "" ? "" : v;
+      if (!blank(v)) out[k.trim()] = v;
+    });
+    return out;
+  }
+
+  function setData(sheets) {
+    Object.keys(TABS).forEach(function (id) {
+      var t = TABS[id];
+      t.rows = (sheets[t.sheet] || []).map(function (r) {
+        var s = Object.keys(r).map(function (k) { return String(r[k]); }).join(" \u0001 ");
+        r._s = s.toLowerCase();
+        r._t = String(r[t.timeKey] || r["Logged At (Server)"] || "").replace(" ", "T");
+        return r;
+      });
+    });
+  }
+
+  function load() {
+    var btn = document.getElementById("refresh");
+    btn.disabled = true;
+    document.getElementById("asof").textContent = "Loading…";
+    if (!API) return fail("No apiUrl in config.js.");
+    if (typeof XLSX === "undefined") return fail("The spreadsheet reader didn't load (cdnjs blocked?).");
+    fetch(API + "/export", { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Server answered " + res.status);
+        return res.arrayBuffer();
+      })
+      .then(function (buf) {
+        var wb = XLSX.read(buf, { type: "array", cellDates: true });
+        var sheets = {};
+        wb.SheetNames.forEach(function (n) {
+          sheets[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: "" })
+            .map(cleanRow)
+            .filter(function (r) { return Object.keys(r).length > 0; });
+        });
+        setData(sheets);
+        document.getElementById("asof").textContent = "Live data, loaded " + stamp(new Date());
+        btn.disabled = false;
+        renderTabs();
+        if (!loaded) { loaded = true; renderControls(); }
+        render();
+      })
+      .catch(function (e) { fail(e && e.message ? e.message : String(e)); });
+  }
+
+  function fail(msg) {
+    document.getElementById("refresh").disabled = false;
+    document.getElementById("asof").textContent = "Couldn't load data";
+    document.getElementById("wrap").innerHTML =
+      '<div class="empty bad">Couldn’t load the logbook data: ' + esc(msg) +
+      "<br>Check the connection, then press Refresh.</div>";
+  }
+
+  // ----- Filtering -----
+
+  // A row passes all active conditions except (optionally) one filter key,
+  // which lets each dropdown show counts for "what else could I pick".
+  function passes(r, st, skip) {
+    for (var k in st.f) {
+      if (k === skip) continue;
+      var have = blank(r[k]) ? "" : String(r[k]);
+      if (have !== st.f[k]) return false;
+    }
+    if (st.from && r._t.slice(0, 10) < st.from) return false;
+    if (st.to && r._t.slice(0, 10) > st.to) return false;
+    if (st.q) {
+      var terms = st.q.toLowerCase().split(/\s+/).filter(Boolean);
+      for (var i = 0; i < terms.length; i++) if (r._s.indexOf(terms[i]) < 0) return false;
+    }
+    return true;
+  }
+
+  // ----- Rendering -----
+
+  function renderTabs() {
+    var nav = document.getElementById("tabs");
+    nav.innerHTML = "";
+    Object.keys(TABS).forEach(function (id) {
+      var b = document.createElement("button");
+      b.className = id === active ? "active" : "";
+      b.innerHTML = esc(TABS[id].label) + '<span class="n">' + TABS[id].rows.length.toLocaleString() + "</span>";
+      b.onclick = function () { active = id; renderTabs(); renderControls(); render(); };
+      nav.appendChild(b);
+    });
+  }
+
+  function renderControls() {
+    var t = TABS[active], st = state[active], box = document.getElementById("controls");
+    box.innerHTML = "";
+    t.filters.forEach(function (k) {
+      var lab = document.createElement("label");
+      lab.textContent = k;
+      var sel = document.createElement("select");
+      sel.dataset.key = k;
+      lab.appendChild(sel);
+      sel.onchange = function () {
+        if (sel.value === "__all__") delete st.f[k]; else st.f[k] = sel.value;
+        render();
+      };
+      box.appendChild(lab);
+    });
+    var q = document.createElement("label");
+    q.className = "search";
+    q.textContent = "Search (all words must match)";
+    var qi = document.createElement("input");
+    qi.type = "search"; qi.placeholder = "e.g. cylinder 교체"; qi.value = st.q; qi.id = "q";
+    var timer;
+    qi.oninput = function () { clearTimeout(timer); timer = setTimeout(function () { st.q = qi.value.trim(); render(); }, 150); };
+    q.appendChild(qi); box.appendChild(q);
+    [["from", "From"], ["to", "To"]].forEach(function (p) {
+      var l = document.createElement("label"); l.textContent = p[1];
+      var i = document.createElement("input"); i.type = "date"; i.value = st[p[0]]; i.id = p[0];
+      i.onchange = function () { st[p[0]] = i.value; render(); };
+      l.appendChild(i); box.appendChild(l);
+    });
+    var clr = document.createElement("button");
+    clr.textContent = "Clear filters";
+    clr.onclick = function () {
+      state[active] = { f: {}, q: "", from: "", to: "", sortKey: st.sortKey, sortDir: st.sortDir };
+      renderControls(); render();
+    };
+    box.appendChild(clr);
+  }
+
+  function refreshDropdowns() {
+    var t = TABS[active], st = state[active];
+    document.querySelectorAll("#controls select").forEach(function (sel) {
+      var k = sel.dataset.key, counts = {}, total = 0;
+      t.rows.forEach(function (r) {
+        if (!passes(r, st, k)) return;
+        var v = blank(r[k]) ? "" : String(r[k]);
+        counts[v] = (counts[v] || 0) + 1; total++;
+      });
+      if (st.f[k] != null && !(st.f[k] in counts)) counts[st.f[k]] = 0;
+      var vals = Object.keys(counts).sort(function (a, b) {
+        if (a === "") return 1; if (b === "") return -1; return collator.compare(a, b);
+      });
+      var html = '<option value="__all__">All (' + total.toLocaleString() + ")</option>";
+      vals.forEach(function (v) {
+        html += '<option value="' + esc(v) + '">' + esc(v === "" ? "(blank)" : v) + " (" + counts[v] + ")</option>";
+      });
+      sel.innerHTML = html;
+      sel.value = st.f[k] != null ? st.f[k] : "__all__";
+      sel.classList.toggle("set", st.f[k] != null);
+    });
+    ["q", "from", "to"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.toggle("set", !!state[active][id]);
+    });
+  }
+
+  function render() {
+    var t = TABS[active], st = state[active];
+    refreshDropdowns();
+    var rows = t.rows.filter(function (r) { return passes(r, st, null); });
+    var col = t.cols.filter(function (c) { return c.k === st.sortKey; })[0];
+    var numeric = col && /num/.test(col.cls);
+    rows.sort(function (a, b) {
+      var x = a[st.sortKey], y = b[st.sortKey], d;
+      if (blank(x) && blank(y)) d = 0;
+      else if (blank(x)) return 1;
+      else if (blank(y)) return -1;
+      else d = numeric ? (Number(x) - Number(y)) : collator.compare(String(x), String(y));
+      if (d === 0) d = collator.compare(a._t, b._t);
+      return d * st.sortDir;
+    });
+
+    var sum = document.getElementById("summary");
+    var bits = ["<span><b>" + rows.length.toLocaleString() + "</b> of " + t.rows.length.toLocaleString() + " entries</span>"];
+    if (active === "dt") {
+      var mins = rows.reduce(function (a, r) { return a + (Number(r["Duration (min)"]) || 0); }, 0);
+      bits.push("<span><b>" + mins.toLocaleString() + "</b> min down (" + (mins / 60).toFixed(1) + " h)</span>");
+    }
+    bits.push("<span>Newest logged first · click a column header to sort</span>");
+    sum.innerHTML = bits.join("");
+
+    var wrap = document.getElementById("wrap");
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">No entries match these filters.</div>'; return; }
+    var h = "<table><thead><tr>";
+    t.cols.forEach(function (c) {
+      var arrow = c.k === st.sortKey ? '<span class="arrow">' + (st.sortDir < 0 ? "▼" : "▲") + "</span>" : "";
+      h += '<th data-k="' + esc(c.k) + '">' + esc(c.label || c.k) + arrow + "</th>";
+    });
+    h += "</tr></thead><tbody>";
+    rows.forEach(function (r) {
+      h += "<tr>";
+      t.cols.forEach(function (c) {
+        var v = r[c.k];
+        v = blank(v) ? "" : (c.fmt === "time" ? fmtTime(v) : v);
+        h += '<td class="' + c.cls + '">' + esc(v) + "</td>";
+      });
+      h += "</tr>";
+    });
+    wrap.innerHTML = h + "</tbody></table>";
+    wrap.querySelectorAll("th").forEach(function (th) {
+      th.onclick = function () {
+        var k = th.dataset.k;
+        if (st.sortKey === k) st.sortDir = -st.sortDir;
+        else { st.sortKey = k; st.sortDir = (k === t.timeKey || k === "Recovery" || k === "Duration (min)" || k === "ID") ? -1 : 1; }
+        render();
+      };
+    });
+  }
+
+  document.getElementById("xlsx").href = API ? API + "/export" : "#";
+  document.getElementById("refresh").onclick = load;
+  load();
+})();
+</script>
+</body>
+</html>
